@@ -307,7 +307,9 @@ if (mode == 1)
   if (myCAM.get_bit(ARDUCHIP_TRIG, CAP_DONE_MASK))
   {
     Serial.println(F("ACK CMD CAM Capture Done."));
-    read_fifo_burst(myCAM);
+	read_fifo_single(myCAM);
+    //read_fifo_burst(myCAM);
+	
     //Clear the capture done flag
     myCAM.clear_fifo_flag();
   }
@@ -473,6 +475,53 @@ uint8_t read_fifo_burst(ArduCAM myCAM)
     delayMicroseconds(15);
   }
   myCAM.CS_HIGH();
+  is_header = false;
+  return 1;
+}
+
+uint8_t read_fifo_single(ArduCAM myCAM)
+{
+  uint8_t temp = 0, temp_last = 0;
+  uint32_t length = 0;
+  length = myCAM.read_fifo_length();
+  Serial.println(length, DEC);
+  if (length >= MAX_FIFO_SIZE) //512 kb
+  {
+    Serial.println(F("Over size."));
+    return 0;
+  }
+  if (length == 0 ) //0 kb
+  {
+    Serial.println(F("Size is 0."));
+    return 0;
+  }
+  //myCAM.CS_LOW();
+  //myCAM.set_fifo_burst();//Set fifo burst mode
+  //temp =  SPI.transfer(0x00);
+  //length --;
+  while ( length-- )
+  {
+	myCAM.CS_LOW();  
+    temp_last = temp;
+    temp =  myCAM.read_fifo();//SPI.transfer(0x00);
+	myCAM.CS_HIGH();
+    if (is_header == true)
+    {
+      Serial.write(temp);
+	  // SPI write to SD card here.
+    }
+    else if ((temp == 0xD8) & (temp_last == 0xFF))
+    {
+      is_header = true;
+      Serial.println(F("ACK IMG"));
+      Serial.write(temp_last);
+      Serial.write(temp);
+    }
+    if ( (temp == 0xD9) && (temp_last == 0xFF) ) //If find the end ,break while,
+    break;
+    delayMicroseconds(15);
+  }
+  //myCAM.CS_HIGH();
   is_header = false;
   return 1;
 }
