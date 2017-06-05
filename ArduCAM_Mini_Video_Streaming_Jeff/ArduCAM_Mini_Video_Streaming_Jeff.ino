@@ -307,8 +307,8 @@ if (mode == 1)
   if (myCAM.get_bit(ARDUCHIP_TRIG, CAP_DONE_MASK))
   {
     Serial.println(F("ACK CMD CAM Capture Done."));
-	read_fifo_single(myCAM);
-    //read_fifo_burst(myCAM);
+	//read_fifo_single(myCAM);
+    read_fifo_burst(myCAM);
 	
     //Clear the capture done flag
     myCAM.clear_fifo_flag();
